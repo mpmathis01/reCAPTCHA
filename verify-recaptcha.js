@@ -1,10 +1,20 @@
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
+  // Permitir CORS
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.totalcursos.com.br'); // seu domínio
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Responder preflight OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') return res.status(405).send('Only POST requests allowed');
 
   const { token } = req.body;
-  if(!token) return res.status(400).json({error: 'Missing token'});
+  if(!token) return res.status(400).json({ error: 'Missing token' });
 
   const secret = process.env.RECAPTCHA_SECRET;
 
