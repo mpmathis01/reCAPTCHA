@@ -81,7 +81,7 @@ export default async function handler(req, res) {
   function combineReputation(ipqs = {}, abuse = {}) {
     const ipqsScoreRaw = ipqs.fraud_score ?? ipqs.fraudScore ?? null;
     const ipqsScore = ipqsScoreRaw !== null ? Number(ipqsScoreRaw) : null;
-    const abuseScore = Number(abuse?.data?.abuseConfidenceScore ?? 0);
+    const abuseScore = Number(abuse?.data?.abuseConfidenceScore ?? abuse?.abuseConfidenceScore ?? 0);
 
     const proxy = !!ipqs.proxy;
     const vpn = !!(ipqs.vpn || ipqs.active_vpn);
