@@ -116,26 +116,37 @@ export default async function handler(req, res) {
   }
 
   // ------- Combinação de scores / decisão -------
-  function combineReputation(ipqs = {}, abuse = {}) {
-    const ipqsScore = Number(ipqs.fraud_score ?? ipqs.fraudScore ?? 0);
-    const abuseScore = Number(abuse?.data?.abuseConfidenceScore ?? 0);
+function combineReputation(ipqs = {}, abuse = {}) {
+  const ipqsScore = Number(ipqs.fraud_score ?? ipqs.fraudScore ?? 0);
+  const abuseScore = Number(abuse?.data?.abuseConfidenceScore ?? 0);
 
-    const proxy = !!ipqs.proxy;
-    const vpn = !!(ipqs.vpn || ipqs.active_vpn);
-    const tor = !!ipqs.tor;
-    const bot_status = !!ipqs.bot_status;
+  const proxy = !!ipqs.proxy;
+  const vpn = !!(ipqs.vpn || ipqs.active_vpn);
+  const tor = !!ipqs.tor;
+  const bot_status = !!ipqs.bot_status;
 
-    let combined = Math.round(ipqsScore * 0.6 + abuseScore * 0.4);
-    if (proxy || vpn || tor || bot_status) combined = Math.min(100, combined + 20);
+  let combined;
 
-    let reputationVerdict = 'UNKNOWN';
-    if (combined >= 80) reputationVerdict = 'BOT';
-    else if (combined >= 55) reputationVerdict = 'SUSPECT';
-    else if (combined >= 40) reputationVerdict = 'UNSURE';
-    else reputationVerdict = 'CLEAN';
-
-    return { combined, reputationVerdict, ipqsScore, abuseScore, proxy, vpn, tor, bot_status };
+  if (ipqs.fallback) {
+    // IPQS indisponível, usa AbuseIPDB com mais peso
+    combined = Math.round(ipqsScore * 0.3 + abuseScore * 0.7);
+  } else {
+    // IPQS disponível
+    combined = Math.round(ipqsScore * 0.6 + abuseScore * 0.4);
   }
+
+  // Flags do IPQS ainda contam se disponíveis
+  if (proxy || vpn || tor || bot_status) combined = Math.min(100, combined + 20);
+
+  let reputationVerdict = 'UNKNOWN';
+  if (combined >= 80) reputationVerdict = 'BOT';
+  else if (combined >= 55) reputationVerdict = 'SUSPECT';
+  else if (combined >= 40) reputationVerdict = 'UNSURE';
+  else reputationVerdict = 'CLEAN';
+
+  return { combined, reputationVerdict, ipqsScore, abuseScore, proxy, vpn, tor, bot_status };
+}
+
 
   try {
     // executar em paralelo: reCAPTCHA + IP checks
