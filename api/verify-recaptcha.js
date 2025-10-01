@@ -18,10 +18,13 @@ export default async function handler(req, res) {
 
   // pegar IP: aceita ip no body (útil para testes), senão usa header/socket
   const getClientIp = (req) => {
-    const header = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
-    if (header) return header.split(',')[0].trim();
-    return ipBody || (req.socket && req.socket.remoteAddress) || null;
+  const ipFromBody = req.body?.ip;
+  if (ipFromBody) return ipFromBody;      // <-- usa IP de teste se fornecido
+  const header = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
+  if (header) return header.split(',')[0].trim();
+  return req.socket?.remoteAddress || null;
   };
+  
   const ip = getClientIp(req);
   if (!ip) return res.status(400).json({ error: 'Missing IP' });
 
